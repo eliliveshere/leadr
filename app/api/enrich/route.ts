@@ -22,7 +22,7 @@ const EnrichmentSchema = z.object({
     outreach_hook: z.string().describe("A personalized single sentence hook for a cold email based on findings."),
 })
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'placeholder' })
 
 export async function POST(request: Request) {
     const supabase = await createClient()

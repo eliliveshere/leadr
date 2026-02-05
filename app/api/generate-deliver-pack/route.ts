@@ -60,7 +60,7 @@ const PackOutputSchema = z.object({
 })
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: process.env.OPENAI_API_KEY || 'placeholder'
 })
 
 export async function POST(request: Request) {
