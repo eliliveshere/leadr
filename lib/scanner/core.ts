@@ -188,13 +188,33 @@ export async function scanLead(lead: any): Promise<ScanResult> {
     // Angle
     let recommended_angle = "Simple conversion boost — stronger CTA + lead capture"
 
-    if (lead.google_is_permanently_closed || lead.google_is_temporarily_closed) {
-        recommended_angle = "Skip — business closed"
+    // AI Enrichment Overrides
+    if (lead.enrichment_status === 'enriched' && lead.enrichment_data) {
+        // Boost confidence if AI verified things
+        if (lead.enrichment_data.analysis?.estimated_tech_savviness === 'high') {
+            // Maybe slightly boost score if they are tech savvy (easier to sell software?) 
+            // OR reduce if they already have tools? Let's assume neutral for now.
+        }
+
+        // Use AI Hook for Angle if available
+        if (lead.enrichment_data.outreach_hook) {
+            recommended_angle = "AI Insight: " + lead.enrichment_data.outreach_hook
+        }
+
+        // Add AI Strengths/Weaknesses to reasons if sparse
+        if (reasons.length < 3 && lead.enrichment_data.analysis?.weaknesses_or_gaps?.length > 0) {
+            reasons.push(`Weakness: ${lead.enrichment_data.analysis.weaknesses_or_gaps[0]}`)
+        }
+    } else {
+        // Fallback Logic
+        if (lead.google_is_permanently_closed || lead.google_is_temporarily_closed) {
+            recommended_angle = "Skip — business closed"
+        }
+        else if (!url) recommended_angle = "Google listing has no website — quick 1-page call/quote page"
+        else if (missing.includes("No booking link found") && missing.includes("No contact form found")) recommended_angle = "No booking/contact capture — missed leads"
+        else if (missing.includes("No clickable phone link")) recommended_angle = "Mobile tap-to-call missing — friction"
+        else if (missing.includes("No business hours found")) recommended_angle = "Missed after-hours calls — instant SMS follow-up"
     }
-    else if (!url) recommended_angle = "Google listing has no website — quick 1-page call/quote page"
-    else if (missing.includes("No booking link found") && missing.includes("No contact form found")) recommended_angle = "No booking/contact capture — missed leads"
-    else if (missing.includes("No clickable phone link")) recommended_angle = "Mobile tap-to-call missing — friction"
-    else if (missing.includes("No business hours found")) recommended_angle = "Missed after-hours calls — instant SMS follow-up"
 
     return {
         score,

@@ -49,8 +49,59 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
                 </div>
 
                 <div className="border p-4 rounded bg-white shadow-sm flex flex-col space-y-4">
-                    <h2 className="font-semibold text-lg">Qualification Scanner</h2>
+                    <h2 className="font-semibold text-lg">AI Enrichment</h2>
 
+                    {(!lead.enrichment_status || lead.enrichment_status === 'not_enriched') && (
+                        <div className="text-center py-6 text-gray-500">
+                            <p className="text-sm mb-2">Analyze reviews, website & Google listing.</p>
+                            <form action="/api/enrich" method="post">
+                                <input type="hidden" name="lead_id" value={lead.id} />
+                                <button className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 transition-colors">
+                                    ✨ Enrich with AI
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {lead.enrichment_status === 'enriching' && (
+                        <div className="text-center py-6 text-purple-600 animate-pulse">
+                            Enriching data...
+                        </div>
+                    )}
+
+                    {lead.enrichment_status === 'enriched' && lead.enrichment_data && (
+                        <div className="space-y-4 text-sm">
+                            <div className="bg-purple-50 p-3 rounded border border-purple-100">
+                                <h3 className="font-medium text-purple-900 mb-1">Outreach Hook</h3>
+                                <p className="text-purple-800 italic">"{lead.enrichment_data.outreach_hook}"</p>
+                            </div>
+
+                            <div>
+                                <h3 className="font-medium text-gray-700">Business Summary</h3>
+                                <p className="text-gray-600 mt-1">{lead.enrichment_data.analysis?.business_summary}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <h4 className="font-medium text-xs text-gray-500 uppercase">Strengths</h4>
+                                    <ul className="list-disc list-inside text-xs mt-1 text-green-700">
+                                        {lead.enrichment_data.analysis?.key_strengths?.slice(0, 3).map((s: string, i: number) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-xs text-gray-500 uppercase">Weaknesses</h4>
+                                    <ul className="list-disc list-inside text-xs mt-1 text-red-700">
+                                        {lead.enrichment_data.analysis?.weaknesses_or_gaps?.slice(0, 3).map((s: string, i: number) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="border p-4 rounded bg-white shadow-sm flex flex-col space-y-4">
+                    <h2 className="font-semibold text-lg">Qualification Scanner</h2>
+                    {/* ... scanner content ... */}
                     {lead.scan_status === 'not_scanned' && (
                         <div className="text-center py-6 text-gray-500">
                             <p>Not scanned yet.</p>
@@ -58,6 +109,7 @@ export default async function LeadDetailPage(props: { params: Promise<{ id: stri
                                 <input type="hidden" name="lead_id" value={lead.id} />
                                 <button className="bg-black text-white px-3 py-1 rounded text-xs">Run Scan</button>
                             </form>
+                            {lead.enrichment_status === 'enriched' && <p className="text-[10px] text-purple-600 mt-2">Will use enriched data signal.</p>}
                         </div>
                     )}
 
