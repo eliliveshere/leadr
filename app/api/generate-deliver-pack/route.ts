@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     Output strictly valid JSON.
   `
 
-    const completion = await openai.beta.chat.completions.parse({
+    const completion = await openai.chat.completions.create({
         model: 'gpt-4o-2024-08-06',
         messages: [
             { role: 'system', content: 'Generate client delivery assets.' },
@@ -101,5 +101,7 @@ export async function POST(request: Request) {
         response_format: zodResponseFormat(PackOutputSchema, "delivery_pack"),
     })
 
-    return NextResponse.json(completion.choices[0].message.parsed)
+    const content = completion.choices[0].message.content
+    const parsed = content ? JSON.parse(content) : null
+    return NextResponse.json(parsed)
 }
