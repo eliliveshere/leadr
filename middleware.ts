@@ -6,44 +6,57 @@ export async function middleware(request: NextRequest) {
         request,
     })
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
-        {
-            cookies: {
-                getAll() {
-                    return request.cookies.getAll()
-                },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        request.cookies.set(name, value)
-                    )
-                    supabaseResponse = NextResponse.next({
-                        request,
-                    })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    )
-                },
-            },
+    try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+        if (!url || !key || url.includes('placeholder')) {
+            // If env vars are missing or placeholders, skip auth logic to prevent crash
+            // The app will likely fail later on specific data fetches, but at least it loads.
+            return supabaseResponse
         }
-    )
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+        const supabase = createServerClient(
+            url,
+            key,
+            {
+                cookies: {
+                    getAll() {
+                        return request.cookies.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            request.cookies.set(name, value)
+                        )
+                        supabaseResponse = NextResponse.next({
+                            request,
+                        })
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            supabaseResponse.cookies.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        )
 
-    if (
-        !user &&
-        !request.nextUrl.pathname.startsWith('/login') &&
-        !request.nextUrl.pathname.startsWith('/auth') &&
-        !request.nextUrl.pathname.startsWith('/api/twilio') && // Allow webhooks
-        request.nextUrl.pathname !== '/' // Allow landing page
-    ) {
-        // no user, potentially respond by redirecting the user to the login page
-        const url = request.nextUrl.clone()
-        url.pathname = '/login'
-        return NextResponse.redirect(url)
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
+
+        if (
+            !user &&
+            !request.nextUrl.pathname.startsWith('/login') &&
+            !request.nextUrl.pathname.startsWith('/auth') &&
+            !request.nextUrl.pathname.startsWith('/api/twilio') &&
+            request.nextUrl.pathname !== '/'
+        ) {
+            const redirectUrl = request.nextUrl.clone()
+            redirectUrl.pathname = '/login'
+            return NextResponse.redirect(redirectUrl)
+        }
+    } catch (e) {
+        console.error("Middleware Auth Error:", e)
+        // Allow request to proceed on error, sticking to "fail open" to avoid 500 blocking site
     }
 
     return supabaseResponse
