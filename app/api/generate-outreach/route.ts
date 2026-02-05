@@ -96,7 +96,8 @@ export async function POST(request: Request) {
         response_format: zodResponseFormat(GeneratedContentSchema, "outreach_content"),
     })
 
-    const output = completion.choices[0].message.parsed
+    const content = completion.choices[0].message.content
+    const output = content ? JSON.parse(content) : null
 
     return NextResponse.json(output)
 }
